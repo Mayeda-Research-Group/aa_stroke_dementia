@@ -1,3 +1,14 @@
+
+# Upload data -------------------------------------------------------------
+
+
+# set up paths ----
+
+source(here("01_R", "path.R"))
+data_path <- paste0(path_to_box,
+                    "Asian_Americans_dementia_data/analysis_data_tables/",
+                    "aa_adrd_cardiometabolic_tte.sas7bdat")
+
 ## Descriptive statistics
 
 
