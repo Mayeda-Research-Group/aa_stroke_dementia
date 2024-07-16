@@ -4,14 +4,14 @@ This repo contains R scripts (`01_R`) and select output (`covbal_plots`) for the
 
 Main scripts include: 
 
-0. Scripts 0.x consolidate datasets from various sources.
-1. Script 1 constructs the time-to-event dataset in a long format for analysis.
-2. Scripts 2.x performs multiple imputation for some demographic and health-related variables in the analytic dataset. 
-3. Scripts 3.x summarise descriptive information and explore options for constructing weighting models.
-4. Scripts 4.x conducts main analysis.
-5. Scripts 5.x cleans analysis results and prepare tables and figures.
-6. Script 6 performs a simple quantitative bias analysis, looking at impact of outcome misclassification.
-7. Script 7 provides some additional clarification during manuscript preparation.
+* Scripts 0.x consolidate datasets from various sources.
+* Script 1 constructs the time-to-event dataset in a long format for analysis.
+* Scripts 2.x performs multiple imputation for some demographic and health-related variables in the analytic dataset. 
+* Scripts 3.x summarise descriptive information and explore options for constructing weighting models.
+* Scripts 4.x conducts main analysis.
+* Scripts 5.x cleans analysis results and prepare tables and figures.
+* Script 6 performs a simple quantitative bias analysis, looking at impact of outcome misclassification.
+* Script 7 provides some additional clarification during manuscript preparation.
 
 Auxiliary scripts include: 
 
