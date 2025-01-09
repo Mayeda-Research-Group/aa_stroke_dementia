@@ -1,4 +1,4 @@
-# aa_stroke_dementia
+# Effect of Incident Stroke on Dementia Risk Over 10 Years in a Cohort of Asian American and Non-Latino White Older Adults in California
 
 This repo contains R scripts (`01_R`) and select output (`covbal_plots`) for the paper named Effect of incident stroke on the risk of dementia over 10 years of follow-up in a cohort of Asian American and non-Latino White older adults in California. 
 
