@@ -217,14 +217,14 @@ RR_yr_plotdf %>%
 
 # the scales are bad, limit upper CI
 
-RR_limit <- 40
+RR_limit <- 25
 RR_yr_plotdf <- RR_yr_plotdf %>% 
   mutate(
     arrow_pos = ifelse(upper > RR_limit, RR_limit, NA), 
     upper_l = ifelse(upper <= RR_limit, upper, NA), 
     line_nudge = case_when(
-      Model == "Crude" ~ 0.3, 
-      Model == "Adjusted" ~ -0.3
+      Model == "Crude" ~ 0.4, 
+      Model == "Adjusted" ~ -0.4
     )
   )
 
@@ -259,7 +259,13 @@ RR_yr_plotdf %>%
     transform = "reverse",
     breaks = seq(10, 2, -2), limits = c(11, 1)
   ) +
-  scale_y_continuous(breaks = c(0, 10, 20, 30, 40), limits = c(-2, 45)) + 
+  scale_y_continuous(
+    breaks = c(1, seq(5, RR_limit, 5)),
+    # minor_breaks = seq(2.5, RR_limit, 2.5),
+    limits = c(-2, RR_limit + 4)
+  ) + 
+  # there are 0's in some of the lower CI bounds, so log transformation 
+  # would give errors. 
   # scale_y_log10(breaks = seq(1, 40, by = 5), limits = c(0.9, 45)) + 
   coord_flip() + 
   theme_bw() + 
@@ -268,16 +274,16 @@ RR_yr_plotdf %>%
     legend.box.background = element_blank(),
     axis.title.y = element_text(vjust = 3),
     panel.grid.minor.x = element_blank(),
-    panel.grid.minor.y = element_blank(), 
+    panel.grid.minor.y = element_blank(),
     axis.text.x = element_text(size = 11),
     axis.text.y = element_text(size = 11),
     strip.text = element_text(size = 11)
   ) +
   labs(y = "Risk ratio", x = "Year") 
-
+ 
 ggsave(
   file = here("03_figs", "RR_direct_effect_by_yr.png"),
-  height = 8, width = 6 , units = "in"
+  height = 9, width = 6 , units = "in"
 )
 
 
@@ -430,22 +436,18 @@ RD_yr_plotdf %>%
     strip.text = element_text(size = 11)
   ) +
     labs(y = "Risk difference", x = "Year") 
-  
-ggsave(
-  file = here("03_figs", "RD_direct_effect_by_yr.png"),
-  height = 8, width = 6, units = "in"
-)
 
-# we can put arrows on CI's, but might not be too necessary
 
-RD_limit <- 70
+# we can put arrows on CI's
+
+RD_limit <- 55
 RD_yr_plotdf <- RD_yr_plotdf %>% 
   mutate(
     arrow_pos = ifelse(upper > RD_limit, RD_limit, NA), 
     upper_l = ifelse(upper <= RD_limit, upper, NA), 
     line_nudge = case_when(
-      Model == "Crude" ~ 0.3, 
-      Model == "Adjusted" ~ -0.3
+      Model == "Crude" ~ 0.4, 
+      Model == "Adjusted" ~ -0.4
     )
   )
 
@@ -476,7 +478,7 @@ RD_yr_plotdf %>%
   scale_color_manual(values = c("#E69F00", "#0072B2")) +
   geom_hline(aes(yintercept = 0), linetype = "dashed") +
   scale_x_continuous(breaks = seq(2, 10, 2), limits = c(1, 11)) + 
-  # scale_y_continuous(breaks = seq(0, 80, 10), limits = c(-2, 75)) +
+  scale_y_continuous(breaks = seq(0, RD_limit, 5), limits = c(-2, RD_limit + 5)) +
   # scale_y_log10(breaks = seq(1, 40, by = 5), limits = c(0.9, 45)) + 
   coord_flip() + 
   theme_bw() + 
@@ -487,9 +489,14 @@ RD_yr_plotdf %>%
     panel.grid.minor.x = element_blank(),
     axis.text.x = element_text(size = 11),
     axis.text.y = element_text(size = 11),
-    strip.text = element_text(size = 11)
+    strip.text = element_text(size = 11) 
   ) +
   labs(y = "Risk difference (%)", x = "Year") 
+
+ggsave(
+  file = here("03_figs", "RD_direct_effect_by_yr.png"),
+  height = 9, width = 6, units = "in"
+)
 
 # Supp Figure xx: RR total effect ----
 
@@ -574,6 +581,7 @@ AJ_RR_yr_plotdf %>%
     transform = "reverse",
     breaks = seq(10, 2, -2), limits = c(11, 1)
   ) +
+  scale_y_continuous(breaks = c(0, 3, 0.5)) + 
   # scale_y_continuous(breaks = c(0, 10, 20, 30, 40), limits = c(-2, 45)) + 
   coord_flip() + 
   theme_bw() + 
@@ -591,14 +599,14 @@ AJ_RR_yr_plotdf %>%
 
 # the scales are bad, limit upper CI
 
-RR_limit <- 3
+RR_limit <- 2.5
 AJ_RR_yr_plotdf <- AJ_RR_yr_plotdf %>% 
   mutate(
     arrow_pos = ifelse(upper > RR_limit, RR_limit, NA), 
     upper_l = ifelse(upper <= RR_limit, upper, NA), 
     line_nudge = case_when(
-      Model == "Crude" ~ 0.3, 
-      Model == "Adjusted" ~ -0.3
+      Model == "Crude" ~ 0.4, 
+      Model == "Adjusted" ~ -0.4
     )
   )
 
@@ -634,7 +642,8 @@ AJ_RR_yr_plotdf %>%
     transform = "reverse",
     breaks = seq(10, 2, -2), limits = c(11, 1)
   ) +
-  scale_y_continuous(limits = c(0, 3.24)) + 
+  scale_y_continuous(limits = c(0, RR_limit + 0.24), 
+                     breaks = seq(0, 3, 0.5), minor_breaks = seq(0, 3, 0.25)) + 
   # scale_y_continuous(breaks = c(0, 10, 20, 30, 40), limits = c(-2, 45)) + 
   coord_flip() + 
   theme_bw() + 
@@ -642,7 +651,7 @@ AJ_RR_yr_plotdf %>%
     legend.background = element_blank(),
     legend.box.background = element_blank(),
     axis.title.y = element_text(vjust = 3),
-    panel.grid.minor.x = element_blank(),
+    # panel.grid.minor.x = element_blank(),
     panel.grid.minor.y = element_blank(), 
     axis.text.x = element_text(size = 11),
     axis.text.y = element_text(size = 11),
@@ -652,7 +661,7 @@ AJ_RR_yr_plotdf %>%
 
 ggsave(
   file = here("03_figs", "RR_total_effect_by_yr.png"),
-  height = 8, width = 6 , units = "in"
+  height = 9, width = 6 , units = "in"
 )
 
 # Supp Figure xx: RD total effect ----
@@ -739,7 +748,7 @@ AJ_RD_yr_plotdf %>%
     transform = "reverse",
     breaks = seq(10, 2, -2), limits = c(11, 1)
   ) +
-  # scale_y_continuous(breaks = seq(0, 80, 15), limits = c(-2, 75)) + 
+  scale_y_continuous(breaks = seq(-10, 10, 2), limits = c(-10.5, 10.5)) +
   facet_wrap(~ Ethnicity, ncol = 1) + 
   coord_flip() + 
   theme_bw() +

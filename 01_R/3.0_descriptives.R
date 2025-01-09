@@ -354,8 +354,8 @@ cs_risk_combined_stroke_agegrp <- baseline_tte_data %>%
   mutate(
     survey_age_grp = case_when(
       survey_age < 70 ~ "<70", 
-      survey_age >= 70 & survey_age < 80 ~ "70-80", 
-      survey_age >= 80 ~ ">=80"
+      survey_age >= 70 & survey_age <= 80 ~ "70-80", 
+      survey_age > 80 ~ ">80"
     ), 
     stroke_end = case_when(
       combined_stroke_inc == 0 & 
@@ -375,7 +375,7 @@ cs_risk_combined_stroke_agegrp %>%
   mutate(
     ethnicity_rev = str_sub(ethnicity_rev, start = 15),
     age_grp = str_sub(age_grp, start = 25) %>% str_trim() %>% 
-      factor(levels = c(">=80", "70-80", "<70")),
+      factor(levels = c(">80", "70-80", "<70")),
     across(c(estimate, conf.low, conf.high), function(x) x * 100), 
   ) %>% 
   filter(
@@ -390,7 +390,7 @@ cs_risk_combined_stroke_agegrp %>%
   scale_x_continuous(limits = c(0, 10)) + 
   labs(
     x = "Follow-up time (years)", y = "Cumulative incidence (%)", 
-    color = "Baseline age", fill = "Baseline age"
+    color = "Baseline age (years)", fill = "Baseline age (years)"
   ) + 
   facet_wrap(~ ethnicity_rev) + 
   theme_bw() + 

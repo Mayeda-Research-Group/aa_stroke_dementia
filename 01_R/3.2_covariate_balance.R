@@ -12,8 +12,8 @@ p_load(
 # install.packages("devtools",dependencies=TRUE)
 # library(devtools)
 # install_github("jwjackson/confoundr",
-#                dependencies=c("Depends","Imports"), 
-#                build = TRUE, 
+#                dependencies=c("Depends","Imports"),
+#                build = TRUE,
 #                build_opts = c("--no-resave-data","--no-manual"))
 
 library(confoundr)
@@ -235,7 +235,7 @@ generate_IPCW <- function(longdata, formula1, formula2, return_model = FALSE) {
 }
 
 # check t-v balance by ethnicity ------------------------------------------
-all_ethns <- names(weighting_formulas$stroke_isd_acvd)
+all_ethns <- names(weighting_formulas$stroke_isd_acvd)[c(2,3,4,7,1)]
 
 wt_summary <- vector(mode = "list", length = length(all_ethns))
 names(wt_summary) <- all_ethns
@@ -246,7 +246,7 @@ for (ethn in all_ethns) {
   formulas <- weighting_formulas[["stroke_combined"]][[ethn]]
   
   long_data_sub <- long_tte_data %>% filter(ethnicity_rev == ethn) %>% 
-    mutate(new_id = subjid) # I don't know what I did this for? 
+    mutate(new_id = subjid) 
   
   long_data_sub <- generate_IPTW(long_data_sub, formulas$stroke)
   long_data_sub <- generate_IPCW(long_data_sub, formulas$death, formulas$endofMem)
@@ -268,25 +268,42 @@ for (ethn in all_ethns) {
   long_data_sub <- cbind(long_data_sub, dummy_vars[, -1])
   
   # choose variables that we want to check covariate balance for
+  # the labels must match the order of the variables
   tv_covars <- c("diab", "htn", "inc_ami", "chf", "pvd", "bmi", "sbp", 
                  "cancer", "ihd", "dyslip", "tot_choles")
   static_covars <- c("survey_age_r", "female", colnames(dummy_vars)[-1], "prev_ami")
-  # var_labels <- c("SurveyAge", "Male", "Edu:HS", "Edu:Tech", "Edu:College", 
-  #                 "GeneralHealth:Good", "")
+  
+  tv_covars_label <- c(
+    "Diabetes", "Hypertension", "Incidence acute MI", 
+    "Congestive heart failure", "Peripheral vascular disease", 
+    "BMI", "Systolic blood pressure", "Cancer", 
+    "Ischemic heart disease", "Dyslipidemia", "Total cholesterol"
+  )
+  static_covars_label <- c(
+    "Survey age", "Female", 
+    "Education: High school or GED", 
+    "Education: Technical/trade/some college",
+    "Education: College or more", 
+    "General health: Good", "General health: Fair or poor", 
+    "Current smoker", "Prevalent acute MI"
+  )
 
-  stroke_check <- check_IPTW(
-    longdata = long_data_sub, wt_to_test = "wt_stroke", 
-    stroke_defn = "stroke_combined",
-    # timepoints = c(0, 1, 4, 8, 12, 16)
-    timepoints = c(0, 1, 4, 8)
-  )
+  # start checking covariate balance
+  # ## stroke IPTW, unstabilized 
+  # stroke_check <- check_IPTW(
+  #   longdata = long_data_sub, wt_to_test = "wt_stroke", 
+  #   stroke_defn = "stroke_combined",
+  #   # timepoints = c(0, 1, 4, 8, 12, 16)
+  #   timepoints = c(0, 1, 4, 8)
+  # )
+  # 
+  # ggsave(
+  #   plot = stroke_check$p_covbal + labs(subtitle = "unstabilized IPTW") + theme(aspect.ratio = 1.8), 
+  #   filename = here("03_figs", "covbal_plots", paste0("IPTW_", "unstab_", ethn, ".png")),
+  #   height = 9, width = 8, units = "in"
+  # )
   
-  ggsave(
-    plot = stroke_check$p_covbal + labs(subtitle = "unstabilized IPTW"), 
-    filename = here("03_figs", "covbal_plots", paste0("IPTW_", "unstab_", ethn, ".png")),
-    height = 8, width = 12, units = "in"
-  )
-  
+  ## stroke IPTW, stabilized 
   stroke_check <- check_IPTW(
     longdata = long_data_sub, wt_to_test = "wt_stroke_stab", 
     stroke_defn = "stroke_combined",
@@ -295,18 +312,20 @@ for (ethn in all_ethns) {
   )
   
   ggsave(
-    plot = stroke_check$p_covbal + labs(subtitle = "stabilized IPTW"), 
+    plot = stroke_check$p_covbal + labs(subtitle = "stabilized IPTW") + theme(aspect.ratio = 1.8), 
     filename = here("03_figs", "covbal_plots", paste0("IPTW_", "stab_", ethn, ".png")),
-    height = 8, width = 12, units = "in"
+    height = 9, width = 8, units = "in"
+    # height = 8, width = 12, units = "in"
   )
   
+  ## IPCW, unstabilized 
   long_data_sub <- long_data_sub %>% 
     mutate(
       event_cens = ifelse(event_end_mem == 1 | event_death == 1, 1, 0),
       # wt_cens = wt_EndMem * wt_Death, 
       # wt_cens_stab = wt_EndMem_stab * wt_Death_stab
     )
-  
+
   censor_check <- check_IPCW(
     longdata = long_data_sub, wt_to_test = "wt_cens", 
     stroke_defn = "stroke_combined",
@@ -315,22 +334,23 @@ for (ethn in all_ethns) {
   )
 
   ggsave(
-    plot = censor_check$p_covbal + labs(subtitle = "unstabilized IPCW"),
+    plot = censor_check$p_covbal + labs(subtitle = "unstabilized IPCW") + theme(aspect.ratio = 1.8),
     filename = here("03_figs", "covbal_plots", paste0("IPCW_", "unstab_", ethn, ".png")),
-    height = 8, width = 12, units = "in"
+    height = 9, width = 8, units = "in"
   )
   
-  censor_check <- check_IPCW(
-    longdata = long_data_sub, wt_to_test = "wt_cens_stab", 
-    # timepoints = c(0, 1, 4, 8, 12, 16)
-    timepoints = c(0, 1, 4, 8)
-  )
-  
-  ggsave(
-    plot = censor_check$p_covbal + labs(subtitle = "stabilized IPCW"),
-    filename = here("03_figs", "covbal_plots", paste0("IPCW_", "stab_", ethn, ".png")),
-    height = 8, width = 12, units = "in"
-  )
+  # ## IPCW, stabilized 
+  # censor_check <- check_IPCW(
+  #   longdata = long_data_sub, wt_to_test = "wt_cens_stab", 
+  #   # timepoints = c(0, 1, 4, 8, 12, 16)
+  #   timepoints = c(0, 1, 4, 8)
+  # )
+  # 
+  # ggsave(
+  #   plot = censor_check$p_covbal + labs(subtitle = "stabilized IPCW") + theme(aspect.ratio = 1.8),
+  #   filename = here("03_figs", "covbal_plots", paste0("IPCW_", "stab_", ethn, ".png")),
+  #   height = 9, width = 8, units = "in"
+  # )
   
 }
 
@@ -551,9 +571,15 @@ cov_label <- c(
 plot_df <- bind_rows(glm_summary, .id = "ethnicity") %>%  
   filter(!str_detect(term, "fu_yr|survey_age_r|Intercept")) %>% 
   mutate(
-    weight = factor(weight, levels = c("IPTW", "IPCWdeath", "IPCWmem")),
+    weight = factor(weight, levels = c("IPTW", "IPCWdeath", "IPCWmem"),
+                    labels = c("IPTW", "IPCWdeath", "IPCWmembership")),
     term = factor(term, levels = cov_order, labels = cov_label), 
-    pval_0.05 = ifelse(p.value <= 0.05, "p<=0.05", "p>0.05")
+    pval_0.05 = ifelse(p.value <= 0.05, "p<=0.05", "p>0.05"),
+    ethnicity = factor(
+      ethnicity,
+      levels = c("Chinese", "Filipino", "Japanese", "South Asian", "White"),
+      labels = c("Chinese", "Filipino", "Japanese", "South Asian", "Non-Latino White")
+    )
   )
 
 plot_df %>% 

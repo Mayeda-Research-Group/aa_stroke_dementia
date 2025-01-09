@@ -97,7 +97,7 @@ makehistory.one <- function(input, id, times, group = NULL, exposure, name.histo
 {
   input <- ungroup(input)
   list.exposure <- paste(exposure, times, sep = "_")
-
+  
   s_id <- sym(id)
   input <- input %>% rename(ID = !!s_id)
   
@@ -138,17 +138,18 @@ cov_bal_plot <- function(
     # give the covariates so that they can be ordered in the plot
     static.covariate, # = static_covars_edited,
     temporal.covariate, # = c("STROKE", tv_covars_edited), 
+    static.covariate_labels, temporal.covariate.labels, 
     # plotting arguments
     label.exposure = "A",
     label.covariate = "C",
     lbound = -1.5,
     ubound = 1.5,
-    ratio = 1,
-    text.axis.title = 8,
-    text.axis.y = 6.5,
-    text.axis.x = 6.5,
-    text.strip.y = 10,
-    text.strip.x = 10,
+    ratio = 1.5,
+    text.axis.title = 9,
+    text.axis.y = 9,
+    text.axis.x = 9,
+    text.strip.y = 9,
+    text.strip.x = 9,
     point.size = 0.75,
     zeroline.size = 0.1,
     refline.size = 0.1,
@@ -156,7 +157,7 @@ cov_bal_plot <- function(
     refline.limit.b = 0.25,
     panel.spacing.size = 0.75,
     axis.title = NULL,
-    label.width = 15,
+    label.width = 10,
     legend.position = "bottom",
     text.legend = NULL
 ) { 
@@ -164,18 +165,28 @@ cov_bal_plot <- function(
   # data <- tbl_covbal
   # static.covariate <- static_vars
   # temporal.covariate <- tv_vars
-  # label.exposure <- "Strk"
-  # label.covariate <- "C"
+  # static.covariate_labels <- static_vars_label
+  # temporal.covariate.labels <- tv_vars_label
+  # label.exposure <- "Stroke"
+  # label.covariate <- "Covariate History"
+  
+  # lbound = -bound
+  # ubound = bound
+  # axis.title = fig_label
+
   
   # set up covariate balance df
   labelled.input <- data %>% 
     ungroup() %>% 
     mutate(
-      exposure = paste(label.exposure, "(", time.exposure, ")", sep = ""),
-      covariate = paste(label.covariate, "(", time.covariate, ")", sep = ""),
+      # exposure = paste(label.exposure, "(", time.exposure, ")", sep = ""),
+      exposure = paste(label.exposure, "at Year", time.exposure),
+      # covariate = paste(label.covariate, "(", time.covariate, ")", sep = ""),
+      covariate = paste(label.covariate, "at Year", time.covariate), 
       comparison = paste(exposure, " vs ", covariate, sep = ""), 
       # re-order the covariates based on the type
-      name.cov = factor(name.cov, levels = c(static.covariate, temporal.covariate))
+      name.cov = factor(name.cov, levels = c(static.covariate, temporal.covariate), 
+                        labels = c(static.covariate_labels, temporal.covariate.labels))
     )
   values.exposure <- labelled.input %>% distinct(time.exposure, exposure)
   values.covariate <- labelled.input %>% distinct(time.covariate, covariate)
@@ -214,14 +225,13 @@ cov_bal_plot <- function(
   plot_df <- rbind(
     labelled.input %>% 
       mutate(label = NA) %>% 
-      select(name.cov, rev.exposure, covariate, SMD, wt, label),
-      
-    counts_label %>% 
-      mutate(SMD = NA, wt = NA, label = paste0(N_label, "\n", Nexp_label)) %>% 
       select(name.cov, rev.exposure, covariate, SMD, wt, label)
-      
-  )
-
+    # 
+    # counts_label %>% 
+    #   mutate(SMD = NA, wt = NA, label = paste0(N_label, "\n", Nexp_label)) %>% 
+    #   select(name.cov, rev.exposure, covariate, SMD, wt, label)
+    # 
+  ) 
   
   # set up plot theme
   themes <- theme(
@@ -234,14 +244,14 @@ cov_bal_plot <- function(
     panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank(), 
     panel.grid.major.y = element_blank(), panel.grid.minor.y = element_blank(), 
     panel.background = element_blank(), panel.spacing = unit(panel.spacing.size, "lines"), 
-    legend.position = legend.position, legend.key = element_rect(fill = "white"), 
+    legend.position = legend.position, legend.key = element_rect(fill = NA, color = NA), 
     legend.title = element_text(size = text.legend), 
     legend.text = element_text(size = text.legend))
   
-
+  
   final.plot <- ggplot(plot_df, aes(x = name.cov)) +
     geom_point(aes(y = SMD, color = wt), size = point.size, na.rm = TRUE) + 
-    geom_text(aes(y = 0, label = label), size = text.axis.x * 0.4) + 
+    # geom_text(aes(y = 0, label = label), size = text.axis.x * 0.4) + 
     scale_x_discrete(limits = rev) +
     scale_color_discrete(na.translate = F) + 
     coord_flip() +
@@ -250,7 +260,7 @@ cov_bal_plot <- function(
       rev.exposure ~ covariate,
       labeller = label_wrap_gen(width = label.width, multi_line = TRUE)
     ) + 
-    labs(x = axis.title, y = "SMD", color = "") +
+    labs(x = axis.title, y = "Standardized Mean Difference", color = "") +
     geom_hline(
       yintercept = c(refline.limit.a, refline.limit.b),
       linetype = "dotted", colour = alpha("black", 1/3),
@@ -262,7 +272,7 @@ cov_bal_plot <- function(
       linewidth = zeroline.size
     ) +
     themes
-
+  
   
   # temp.plot <- labelled.input %>% 
   #   # group_by(H, E) %>% 
@@ -317,15 +327,19 @@ cov_bal_plot <- function(
 check_IPTW <- function(longdata, wt_to_test, timepoints, 
                        tv_vars = tv_covars, 
                        static_vars = static_covars, 
+                       tv_vars_label = tv_covars_label,
+                       static_vars_label = static_covars_label,
                        stroke_defn = "stroke_combined",
                        fig_label = ethn # ethnicity
 ) {
   # testing arguments
   # longdata <- long_data_sub
   # wt_to_test <- "wt_stroke"
-  # timepoints <- c(0, 1, 4, 8, 12, 16)
+  # timepoints <- c(0, 1, 4, 8)
   # tv_vars <- tv_covars
   # static_vars <- static_covars
+  # tv_vars_label <- tv_covars_label
+  # static_vars_label <- static_covars_label
   # stroke_defn <- "stroke_combined"
   # fig_label <- ethn
   
@@ -448,13 +462,15 @@ check_IPTW <- function(longdata, wt_to_test, timepoints,
     str_split_i(",", 2) %>% 
     str_remove("]") %>% 
     as.numeric()
-
+  
   p_covbal <- cov_bal_plot(
     tbl_covbal,
     static.covariate = static_vars,
     temporal.covariate = tv_vars,
-    label.exposure = "Strk",
-    label.covariate = "Covar History",
+    static.covariate_labels = static_vars_label, 
+    temporal.covariate.labels = tv_vars_label,
+    label.exposure = "Stroke",
+    label.covariate = "Covariate History",
     lbound = -bound,
     ubound = bound,
     ratio = 0.8, 
@@ -476,16 +492,20 @@ check_IPCW <- function(longdata, wt_to_test, timepoints,
                        # check_tv = check_tv, 
                        tv_vars = tv_covars, 
                        static_vars = static_covars, 
+                       tv_vars_label = tv_covars_label,
+                       static_vars_label = static_covars_label,
                        stroke_defn = "stroke_combined",
                        fig_label = ethn # ethnicity
 ) {
   # testing arguments
   # longdata <- long_data_sub
   # wt_to_test <- "wt_cens"
-  # timepoints <- c(0, 1, 4, 8, 12, 16)
+  # timepoints <- c(0, 1, 4, 8)
   # tv_vars <- tv_covars
   # stroke_defn <- "stroke_combined"
   # static_vars <- static_covars
+  # tv_vars_label = tv_covars_label
+  # static_vars_label = static_covars_label
   
   # tv_vars <- tv_covars %>% str_remove_all("_")
   # if (!is.null(static_vars)) {
@@ -499,6 +519,8 @@ check_IPCW <- function(longdata, wt_to_test, timepoints,
   wt_to_test <- wt_to_test %>% str_remove_all("_")
   tv_vars <- c(stroke_defn, tv_vars)
   tv_vars <- tv_vars %>% str_remove_all("_")
+  
+  tv_vars_label <- c("Stroke", tv_vars_label)
   
   static_vars <- static_vars %>% str_remove_all("_") %>% str_remove_all(" ")
   
@@ -606,8 +628,10 @@ check_IPCW <- function(longdata, wt_to_test, timepoints,
     tbl_covbal,
     static.covariate = static_vars,
     temporal.covariate = tv_vars,
-    label.exposure = "Cens", 
-    label.covariate = "Covar History",
+    static.covariate_labels = static_vars_label, 
+    temporal.covariate.labels = tv_vars_label,
+    label.exposure = "Censored", 
+    label.covariate = "Covariate History",
     lbound = -bound,
     ubound = bound,
     ratio = 0.8, 

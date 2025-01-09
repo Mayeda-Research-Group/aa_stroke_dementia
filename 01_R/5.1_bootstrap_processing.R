@@ -231,6 +231,7 @@ curve_df <- curve_df %>%
 
 # one plot for each ethnicity
 for (ethn in ethns) {
+  # ethn <- ethns[4]
   curve_df %>%
     filter(
       Ethnicity == ethn, stroke_defn == "stroke_combined", 
@@ -246,6 +247,8 @@ for (ethn in ethns) {
     geom_line(aes(y = CIF, color = Stroke)) +
     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.1) +
     scale_color_discrete(guide = guide_legend(reverse = TRUE)) + 
+    scale_y_continuous(limits = c(0, 80)) + 
+    scale_x_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) + 
     facet_wrap(~ Type + Model) +
     theme_bw() +
     labs(
@@ -277,6 +280,8 @@ for (ethn in ethns) {
     geom_line(aes(y = CIF, color = Stroke)) +
     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.1) +
     scale_color_discrete(guide = guide_legend(reverse = TRUE)) + 
+    scale_y_continuous(limits = c(0, 80)) + 
+    scale_x_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) + 
     facet_wrap(~ Type + Model) +
     theme_bw() +
     labs(
